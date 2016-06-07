@@ -1,0 +1,85 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>Cyclic hues generator</title>
+        <script>
+            /**
+             * Shamelessly stolen and adapted from here:
+             *      http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c
+             *
+             * Converts an HSL color value to RGB. Conversion formula
+             * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+             * Assumes h, s, and l are contained in the set [0, 1] and
+             * returns rgb code as understood by HTML.
+             *
+             * @param   Number  h       The hue
+             * @param   Number  s       The saturation
+             * @param   Number  l       The lightness
+             * @return  String #rrggbb  Hexadecimal representation of RGB
+             */
+            function hslToRgb(h, s, l){
+                var r, g, b;
+
+                if(s == 0){
+                    r = g = b = l; // achromatic
+                }else{
+                    function hue2rgb(p, q, t){
+                        if(t < 0) t += 1;
+                        if(t > 1) t -= 1;
+                        if(t < 1/6) return p + (q - p) * 6 * t;
+                        if(t < 1/2) return q;
+                        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    }
+
+                    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    var p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1/3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1/3);
+                }
+
+                var rgb = Math.floor(b * 255) | (Math.floor(g * 255) << 8) | (Math.floor(r * 255) << 16);
+                return '#' + (0x1000000 + rgb).toString(16).slice(1);
+            }
+
+            /**
+             * Generate a 360-degree wrapped cycle of hues,
+             *      transform them into [0..1] range,
+             *      run through the hslToRgb converter above
+             *      and display in a table.
+             */
+            function generateNewTable() {
+                var hue_step = parseInt(    document.getElementById('hue_step').value );
+                var num_hues = parseInt(    document.getElementById('num_hues').value );
+                var common_s = parseFloat(  document.getElementById('common_s').value );
+                var common_l = parseFloat(  document.getElementById('common_l').value );
+
+                var table_html = '<table border=1 cellpadding=4><tr><th>Index</th><th>Hue</th><th>BGcolor</th></tr>';
+                for(i=0; i<num_hues; i++) {
+                    var hue_deg = hue_step*i % 360;
+                    var hex_rgb = hslToRgb(hue_deg/360, common_s, common_l);
+                    table_html += '<tr><td>' + i
+                                + '</td><td>' + hue_deg + '&deg;'
+                                + '</td><td bgcolor=' + hex_rgb +'>' + hex_rgb
+//                                + '</td><td bgcolor=' + hex_rgb +'><font color=white>' + hex_rgb + '</font>'  // white font
+                                + '</td></tr>';
+                }
+                table_html += '</table>';
+
+                document.getElementById('table_area').innerHTML = table_html;
+            }
+        </script>
+    </head>
+    <body>
+        <h1>Cyclic hues generator</h1>
+        <p>(Step up with an integer non-divisor of 360&deg;, wrap the result back into 360&deg; circle, then transform the H-S-L into RGB)</p>
+        Hue step (degrees) :<input type="text" value=149 id="hue_step"/><br/>
+        Number of hues:<input type="text" value=20 id="num_hues"/><br/>
+        Common Saturation (S) value [0..1] :<input type="text" value="0.9" id="common_s"/><br/>
+        Common Lightness (L) value [0..1] :<input type="text" value="0.4" id="common_l"/><br/>
+        <button type="button" onclick="javascript:generateNewTable()">Display the table</button><br/>
+
+        <div id=table_area></div>
+    </body>
+</html>
